@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Creates a Bedrock Agent and action group
 
 Parameters:
@@ -15,7 +15,7 @@ Parameters:
     ConstraintDescription: Must be lowercase, contain one number at the end, and be no more than 5 characters long.
   GitRepoURL:
     Type: String
-    Default: 'https://github.com/aws-samples/amazon-bedrock-agents-cancer-biomarker-discovery.git'
+    Default: "https://github.com/aws-samples/amazon-bedrock-agents-cancer-biomarker-discovery.git"
     Description: Git repository URL where the code files are stored
   ImageTag:
     Type: String
@@ -31,22 +31,19 @@ Parameters:
     Description: Name of the vector index to be created
   GitBranch:
     Type: String
-    Description: 'The github branch to clone, change only for dev testing'
-    Default: 'main'
-
+    Description: "The github branch to clone, change only for dev testing"
+    Default: "main"
 
 Mappings:
   RegionMap:
     us-east-1:
-      PandasLayer: 'arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python312:12'
+      PandasLayer: "arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python312:12"
     us-east-2:
-      PandasLayer: 'arn:aws:lambda:us-east-2:336392948345:layer:AWSSDKPandas-Python312:12'
+      PandasLayer: "arn:aws:lambda:us-east-2:336392948345:layer:AWSSDKPandas-Python312:12"
     us-west-1:
-      PandasLayer: 'arn:aws:lambda:us-west-1:336392948345:layer:AWSSDKPandas-Python312:12'
+      PandasLayer: "arn:aws:lambda:us-west-1:336392948345:layer:AWSSDKPandas-Python312:12"
     us-west-2:
-      PandasLayer: 'arn:aws:lambda:us-west-2:336392948345:layer:AWSSDKPandas-Python312:12'
-
-
+      PandasLayer: "arn:aws:lambda:us-west-2:336392948345:layer:AWSSDKPandas-Python312:12"
 
 Resources:
   # Create ECR repository
@@ -57,24 +54,23 @@ Resources:
 
   EnsureECRImagePushed:
     Type: Custom::EnsureECRImagePushed
-    DependsOn: 
+    DependsOn:
       - TriggerBuildCustomResource
       - TriggerImagingDockerBuild
     Properties:
       ServiceToken: !GetAtt TriggerBuildLambda.Arn
       ECRRepository: !Ref ECRRepository
       ImageTag: !Ref ImageTag
-  
+
   EnsureImagingDockerImagePushed:
     Type: Custom::EnsureECRImagePushed
-    DependsOn: 
+    DependsOn:
       - TriggerBuildCustomResource
       - TriggerImagingDockerBuild
     Properties:
       ServiceToken: !GetAtt TriggerBuildLambda.Arn
       ECRRepository: !Ref ImagingECRRepository
       ImageTag: !Ref ImageTag
-      
 
   CleanupLambdaFunction:
     Type: AWS::Lambda::Function
@@ -85,7 +81,7 @@ Resources:
         ZipFile: |
           import boto3
           import cfnresponse
-          
+
           def delete_ecr_images(repository_name):
               ecr = boto3.client('ecr')
               paginator = ecr.get_paginator('list_images')
@@ -136,7 +132,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -145,36 +141,36 @@ Resources:
       Policies:
         - PolicyName: CleanupPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 's3:ListBucket'
-                  - 's3:DeleteObject'
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${S3Bucket}'
-                  - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-                  - !Sub 'arn:aws:s3:::${LogBucket}'
-                  - !Sub 'arn:aws:s3:::${LogBucket}/*'
+                  - "s3:ListBucket"
+                  - "s3:DeleteObject"
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3Bucket}"
+                  - !Sub "arn:aws:s3:::${S3Bucket}/*"
+                  - !Sub "arn:aws:s3:::${LogBucket}"
+                  - !Sub "arn:aws:s3:::${LogBucket}/*"
               - Effect: Allow
                 Action:
-                  - 'ecr:ListImages'
-                  - 'ecr:BatchDeleteImage'
-                  - 'ecr:DeleteRepository'
-                  - 'ecr:DescribeRepositories'
-                Resource: 
-                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECRRepository}'
-                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/medical-image-processing-smstudio'
+                  - "ecr:ListImages"
+                  - "ecr:BatchDeleteImage"
+                  - "ecr:DeleteRepository"
+                  - "ecr:DescribeRepositories"
+                Resource:
+                  - !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECRRepository}"
+                  - !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/medical-image-processing-smstudio"
               - Effect: Allow
                 Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
 
   CleanupCustomResource:
     Type: Custom::Cleanup
-    DependsOn: 
+    DependsOn:
       - S3Bucket
       - ECRRepository
     Properties:
@@ -182,49 +178,48 @@ Resources:
       ECRRepositoryName: !Ref ECRRepository
       S3BucketName: !Ref S3Bucket
       LogBucketName: !Ref LogBucket
-  
-  
-  S3Bucket: 
-     Type: AWS::S3::Bucket
-     Properties:
-       BucketName: !Sub '${EnvironmentName}-${AWS::AccountId}-${AWS::Region}-agent-build-bucket'
-       BucketEncryption:
-         ServerSideEncryptionConfiguration:
-           - ServerSideEncryptionByDefault:
-               SSEAlgorithm: AES256
-       LoggingConfiguration:
-         DestinationBucketName: !Ref LogBucket
-         LogFilePrefix: 'access-logs/'
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-${AWS::AccountId}-${AWS::Region}-agent-build-bucket"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LogBucket
+        LogFilePrefix: "access-logs/"
 
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref S3Bucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: ForceSSLOnlyAccess
             Effect: Deny
-            Principal: '*'
-            Action: 's3:*'
-            Resource: 
-              - !Sub '${S3Bucket.Arn}'
-              - !Sub '${S3Bucket.Arn}/*'
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "${S3Bucket.Arn}"
+              - !Sub "${S3Bucket.Arn}/*"
             Condition:
               Bool:
-                'aws:SecureTransport': false
+                "aws:SecureTransport": false
 
   LogBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${EnvironmentName}-${AWS::AccountId}-${AWS::Region}-log-bucket'
-  
+      BucketName: !Sub "${EnvironmentName}-${AWS::AccountId}-${AWS::Region}-log-bucket"
+
   LogBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref LogBucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: AllowLogDeliveryWrite
             Effect: Allow
@@ -232,16 +227,15 @@ Resources:
               Service: logging.s3.amazonaws.com
             Action:
               - s3:PutObject
-            Resource: !Sub '${LogBucket.Arn}/*'
+            Resource: !Sub "${LogBucket.Arn}/*"
 
   # Create CloudWatch Log Group
   CodeBuildLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/codebuild/${AWS::StackName}-DockerPushProject'
+      LogGroupName: !Sub "/aws/codebuild/${AWS::StackName}-DockerPushProject"
       RetentionInDays: 14
-  
-  
+
   #Gather Assets for pubmed lambda function, knowledgebase and survival data processing lambda
   DataRetrievalLogic:
     Type: AWS::CodeBuild::Project
@@ -323,7 +317,6 @@ Resources:
                 - aws s3 cp lambda-layer.zip s3://${S3Bucket}/lambda-layer.zip
 
       TimeoutInMinutes: 10
-
 
   # Log into ECR and push scientific-plots-with-lifelines Docker image
   DockerPushLogic:
@@ -426,7 +419,7 @@ Resources:
                 - echo Pushing the Docker image...
                 - docker push ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImagingECRRepository}:${ImageTag}
       SourceVersion: main
-  
+
   ImagingStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -557,63 +550,62 @@ Resources:
 
         - {
             S3Bucket: !Sub "s3://${S3Bucket}",
-            SageMakerExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
+            SageMakerExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn,
           }
-
 
   # IAM role for CodeBuild
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser'
-        - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
       Policies:
         - PolicyName: CodeBuildBasePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Resource: '*'
+                Resource: "*"
                 Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
               - Effect: Allow
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${AWS::AccountId}-codepipeline-${AWS::Region}'
-                  - !Sub 'arn:aws:s3:::${AWS::AccountId}-codepipeline-${AWS::Region}/*'
+                Resource:
+                  - !Sub "arn:aws:s3:::${AWS::AccountId}-codepipeline-${AWS::Region}"
+                  - !Sub "arn:aws:s3:::${AWS::AccountId}-codepipeline-${AWS::Region}/*"
                 Action:
-                  - 's3:GetObject'
-                  - 's3:GetObjectVersion'
-                  - 's3:GetBucketVersioning'
-                  - 's3:PutObject'
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+                  - "s3:PutObject"
               - Effect: Allow
-                Resource: '*'
+                Resource: "*"
                 Action:
-                  - 'ecr:GetAuthorizationToken'
+                  - "ecr:GetAuthorizationToken"
         - PolicyName: S3Access
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:PutObject
                   - s3:GetObject
                   - s3:ListBucket
-                Resource: 
+                Resource:
                   - !GetAtt S3Bucket.Arn
                   - !Sub "${S3Bucket.Arn}/*"
         - PolicyName: ECRAccess
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -629,13 +621,13 @@ Resources:
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
                   - ecr:PutImage
-                Resource: '*'
-  
+                Resource: "*"
+
   StepFunctionsExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -644,65 +636,64 @@ Resources:
       Policies:
         - PolicyName: StepFunctionsExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'sagemaker:CreateProcessingJob'
-                  - 'sagemaker:DescribeProcessingJob'
-                  - 'sagemaker:StopProcessingJob'
-                  - 'sagemaker:ListTags'
-                  - 'sagemaker:AddTags'
-                Resource: '*'
+                  - "sagemaker:CreateProcessingJob"
+                  - "sagemaker:DescribeProcessingJob"
+                  - "sagemaker:StopProcessingJob"
+                  - "sagemaker:ListTags"
+                  - "sagemaker:AddTags"
+                Resource: "*"
               - Effect: Allow
                 Action:
-                  - 'iam:PassRole'
+                  - "iam:PassRole"
                 Resource: !GetAtt SageMakerExecutionRole.Arn
               - Effect: Allow
                 Action:
-                  - 'events:PutTargets'
-                  - 'events:PutRule'
-                  - 'events:DescribeRule'
-                Resource: '*'
+                  - "events:PutTargets"
+                  - "events:PutRule"
+                  - "events:DescribeRule"
+                Resource: "*"
               - Effect: Allow
                 Action:
-                  - 'logs:CreateLogDelivery'
-                  - 'logs:GetLogDelivery'
-                  - 'logs:UpdateLogDelivery'
-                  - 'logs:DeleteLogDelivery'
-                  - 'logs:ListLogDeliveries'
-                  - 'logs:PutResourcePolicy'
-                  - 'logs:DescribeResourcePolicies'
-                  - 'logs:DescribeLogGroups'
-                Resource: '*'
-  
+                  - "logs:CreateLogDelivery"
+                  - "logs:GetLogDelivery"
+                  - "logs:UpdateLogDelivery"
+                  - "logs:DeleteLogDelivery"
+                  - "logs:ListLogDeliveries"
+                  - "logs:PutResourcePolicy"
+                  - "logs:DescribeResourcePolicies"
+                  - "logs:DescribeLogGroups"
+                Resource: "*"
+
   SageMakerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: sagemaker.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess'
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
       Policies:
         - PolicyName: S3Access
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 's3:GetObject'
-                  - 's3:PutObject'
-                  - 's3:ListBucket'
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${S3Bucket}'
-                  - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-                  - !Sub 'arn:aws:s3:::sagemaker-solutions-prod-${AWS::Region}/sagemaker-lung-cancer-survival-prediction/*'
-
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3Bucket}"
+                  - !Sub "arn:aws:s3:::${S3Bucket}/*"
+                  - !Sub "arn:aws:s3:::sagemaker-solutions-prod-${AWS::Region}/sagemaker-lung-cancer-survival-prediction/*"
 
   TriggerBuildLambda:
     Type: AWS::Lambda::Function
@@ -775,7 +766,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -784,19 +775,19 @@ Resources:
       Policies:
         - PolicyName: CodeBuildStartBuildPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: 
+                Action:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
-                Resource: 
+                Resource:
                   - !GetAtt DockerPushLogic.Arn
                   - !GetAtt DataRetrievalLogic.Arn
                   - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/ImagingDockerBuildProject-*
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -806,41 +797,40 @@ Resources:
                 Resource: arn:aws:logs:*:*:*
         - PolicyName: ECRDescribeImagesPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action: ecr:DescribeImages
-                Resource: '*'
+                Resource: "*"
         - PolicyName: PassRoleToCodeBuild
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - iam:PassRole
                 Resource: !GetAtt CodeBuildRole.Arn
-  
+
   TriggerBuildCustomResource:
     Type: Custom::TriggerBuild
     DependsOn: DockerPushLogic
     Properties:
       ServiceToken: !GetAtt TriggerBuildLambda.Arn
       ProjectName: !Ref DockerPushLogic
-  
+
   TriggerImagingDockerBuild:
     Type: Custom::TriggerBuild
     DependsOn: ImagingDockerBuildProject
     Properties:
       ServiceToken: !GetAtt TriggerBuildLambda.Arn
       ProjectName: !Ref ImagingDockerBuildProject
-  
+
   TriggerDataRetrievalLogic:
     Type: Custom::TriggerBuild
     DependsOn: DataRetrievalLogic
     Properties:
       ServiceToken: !GetAtt TriggerBuildLambda.Arn
       ProjectName: !Ref DataRetrievalLogic
-  
 
   AgentResource:
     Type: AWS::Bedrock::Agent
@@ -850,71 +840,63 @@ Resources:
     Properties:
       AgentName: !Sub biomarker-agent-${EnvironmentName}
       AgentResourceRoleArn: !GetAtt AgentRole.Arn
-      AutoPrepare : True
+      AutoPrepare: True
       FoundationModel: !Ref BedrockModelId
       Instruction: |
-        You are a medical research assistant AI specialized in generating SQL queries for a database containing medical biomarker information. Your primary task is to interpret user queries, generate appropriate SQL queries, and provide relevant medical insights based on the data. Use only the appropriate tools as required by the specific question. Follow these instructions carefully:
+        You are an AI assistant specializing in SQL queries for a medical biomarker database. Your main role is to interpret user requests, generate SQL queries, and provide medical insights based on the data. Use the tools provided appropriately, as per the user’s request. Follow these guidelines:
 
-        1. Available tools and their functions:
-          - /getschema: Look up the schema of the database tables
-          - /refinesql: Evaluate and optimize SQL queries
-          - /queryredshift: Execute SQL queries on the database
-          -/queryPubMed: Query PubMed for public biomedical literature
-          - /plot_kaplan_meier: Generate Kaplan-Meier survival charts
-          - /fit_survival_regression: Fit a survival regression model with data in a S3 object
-          - compute_imaging_biomarker: Trigger long-running job for CT lung imaging biomarker processing
-          - analyze_imaging_biomarker: Analyze results of imaging biomarker computation
-          -/bar_chart: Create a bar chart from the given input values.
+        1. Tools:
+          - /getschema: View the database table schema.
+          - /refinesql: Evaluate and optimize SQL queries.
+          - **/queryredshift**: Execute SQL queries on the database.
+          - **/queryPubMed**: Search PubMed for biomedical literature.
+          - **/plot_kaplan_meier**: Generate Kaplan-Meier survival charts.
+          - **/fit_survival_regression**: Fit a survival regression model from S3 data.
+          - **compute_imaging_biomarker**: Start CT lung imaging biomarker processing.
+          - **analyze_imaging_biomarker**: Analyze CT lung biomarker results.
+          - **/bar_chart**: Create a bar chart from input values.
 
-        2. Before generating any SQL query, use the /getschema tool to familiarize yourself with the database structure. This will ensure your queries are correctly formatted and target the appropriate columns.
+        2. **Generating SQL Queries**:
+          - Always use **/getschema** to review database structure first.
+          - Write SQL queries as a single line (no newline characters).
+          - Use aggregation and groupby functions where applicable.
+          - Before executing queries, use **/refinesql** to optimize. Provide both the SQL query and the rationale (omit the original user query). Proceed with **/queryredshift** only after optimization.
 
-        3. When generating an SQL query:
-          a. Write the query as a single line, removing all newline ("\n") characters.
-          b. Always try to use aggregation and groupby when applicable.
-          b. Before execution of a step, evaluate the SQL query with the rationale of the specific step by using the /refinesql tool. Provide both the SQL query and a brief rationale for the specific step you're taking. Do not share the original user question with the tool. 
-          c. Only proceed to execute the query using the /queryredshift tool after receiving the evaluated and potentially optimized version from the /refinesql tool.
+        3. **Querying PubMed**:
+          - Summarize findings and provide links, titles, and summaries. Include the **PubMed link** (e.g., 'https://pubmed.ncbi.nlm.nih.gov/') with each study.
 
-        4. When querying PubMed:
-          a. Summarize the findings of each relevant study with citations to the specific pubmed web link of the study
-          b. The json output will include  'Link', 'Title', 'Summary'.
-          c. Always return the Title and Link (for example, 'https://pubmed.ncbi.nlm.nih.gov/') of each study in your response. 
+        4. **Kaplan-Meier Charts**:
+          - Retrieve necessary data without aggregation. 
+          - Map survival status (0 for Alive, 1 for Dead) as the event parameter.
+          - Use survival duration as the time parameter.
+          - Create baseline and condition groups based on the user-provided expression threshold using **/group_survival_data**.
 
-        5. If the user query requires a Kaplan-Meier chart:
-          a. Generate the necessary SQL query to retrieve the required data without any aggregation. 
-          c. Map survival status as 0 for Alive and 1 for Dead for the event parameter.
-          d. Use survival duration as the duration parameter.
-          e. Use the /group_survival_data tool to create baseline and condition group based on expression value threshold provided by the user.
+        5. **Survival Regression Analysis**:
+          - Retrieve records with survival status, duration, and relevant biomarkers.
+          - Use **/fit_survival_regression** to identify the best-performing biomarker using the p-value summary.
 
-        6. If a survival regression analysis is needed:
-          a. Retrieve all records with columns start with survival status as first column, then survival duration, and the required biomarkers.
-          b. Use the /fit_survival_regression tool to identify the best-performing biomarker based on the p-value summary.
+        6. **CT Lung Imaging Biomarker Analysis**:
+          - Identify patient IDs based on the conversation.
+          - Use **compute_imaging_biomarker** to initiate processing, passing IDs (e.g., ["R01-043", "R01-93"]).
+          - Use **analyze_imaging_biomarker** only when explicitly requested for analysis.
 
-        7. For computed tomographic (CT) lung imaging biomarker analysis:
-          a. Identify the patient subject ID(s) based on the conversation.
-          b. Use the compute_imaging_biomarker tool to trigger the long-running job, passing the subject ID(s) as an array of strings (for example, ["R01-043", "R01-93"]).
-          c. Only if specifically asked for an analysis, use the analyze_imaging_biomarker tool to process the results from the previous job.
+        7. **Creating Bar Charts**:
+          - Pass **x_values** and **y_values** as arrays. For example, for apples and eggs with values 3 and 4, pass `['apple', 'egg']` and `[3, 4]` as inputs.
 
-        8. For literature evidence, make use of the knowledge base to retrieve relevant information.
+        8. **Responding to Queries**:
+          - Briefly summarize your understanding of the user's query.
+          - Explain the steps you're taking to address the query, ask for clarifications if needed.
+          - Present query results and any additional analysis.
+          - When generating charts or statistical analysis, explain the significance in context.
+          - Conclude with key findings and potential implications for medical research.
 
-        9. When you need to create a bar chart or plot:
-          a. Always pass x_values and y_values in Array type to the function. If the user says x values are apple,egg and y values are 3,4 or as [apple,egg] and [3,4] pass their value as ['apple', 'banana'] and [3,4]
-         
-        10. When providing your response:
-          a. Start with a brief summary of your understanding of the user's query.
-          b. Explain the steps you're taking to address the query. Ask for clarifications from the user if required. 
-          c. Present the results of your database queries and any additional analyses.
-          d. If you generate any charts or perform statistical analyses, explain their significance in the context of the user's query.
-          e. Conclude with a concise summary of the findings and their potential implications for medical research.
-
-        Make sure to explain any medical or statistical concepts in a clear, accessible manner.
-
-
+        Keep all explanations clear and accessible.
 
       Description: "Agent for querying biomaker database."
       ActionGroups:
         - ActionGroupName: sqlActionGroup
           Description: Action for getting the database schema and querying the database
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt AgentLambdaFunction.Arn
           ApiSchema:
             Payload: |
@@ -1049,7 +1031,7 @@ Resources:
               }
         - ActionGroupName: scientificAnalysisActionGroup
           Description: Actions for scientific analysis with lifelines library
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt ScientificPlotLambdaFunction.Arn
           FunctionSchema:
             Functions:
@@ -1089,7 +1071,7 @@ Resources:
                     Required: true
         - ActionGroupName: imagingBiomarkerProcessing
           Description: Actions for processing imaging biomarker within CT scans for a list of subjects
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt ImagingBiomarkerLambda.Arn
           FunctionSchema:
             Functions:
@@ -1109,7 +1091,7 @@ Resources:
                     Required: true
         - ActionGroupName: survivalDataProcessing
           Description: Process survival data of patients in order to invoke other tools
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt SurvivalDataProcessingLambdaFunction.Arn
           FunctionSchema:
             Functions:
@@ -1135,7 +1117,7 @@ Resources:
 
         - ActionGroupName: matplotbarchart
           Description: Creates a bar chart from the given input values
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt MatPlotBarChartLambdaFunction.Arn
           FunctionSchema:
             Functions:
@@ -1165,69 +1147,65 @@ Resources:
 
         - ActionGroupName: queryPubMed
           Description: Actions for fetching biomedical literature from PubMed
-          ActionGroupExecutor: 
+          ActionGroupExecutor:
             Lambda: !GetAtt QueryPubMedLambdaFunction.Arn
           ApiSchema:
             Payload: |
-                {
-                    "openapi": "3.0.0",
-                    "info": {
-                        "title": "fetch biomedical literature",
-                        "version": "1.0.0",
-                        "description": "PubMed API to help answer users question using abstracts from biomedical literature."
-                    },
-                    "paths": {
-                        "/query-pubmed": {
-                            "post": {
-                                "summary": "Query pubmed to relevant information from abstracts of biomedical articles.",
-                                "description": "Query pubmed to relevant information from abstracts of biomedical articles. The PubMed API takes in the user query then returns the abstracts of top 5 relevant articles.",
-                                "operationId": "query-pubmed",
-                                "parameters": [
-                                    {
-                                        "name": "query",
-                                        "in": "query",
-                                        "description": "user query",
-                                        "required": true,
-                                        "schema": {
-                                            "type": "string"
-                                        }
-                                    }
-                                ],                
-                                "responses": {
-                                    "200": {
-                                        "description": "Query pubmed to relevant information from abstracts of biomedical articles.",
-                                        "content": {
-                                            "application/json": {
-                                                "schema": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "answer": {
-                                                            "type": "string",
-                                                            "description": "The response to user query with list of pubmed article abstracts."
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+              {
+                  "openapi": "3.0.0",
+                  "info": {
+                      "title": "fetch biomedical literature",
+                      "version": "1.0.0",
+                      "description": "PubMed API to help answer users question using abstracts from biomedical literature."
+                  },
+                  "paths": {
+                      "/query-pubmed": {
+                          "post": {
+                              "summary": "Query pubmed to relevant information from abstracts of biomedical articles.",
+                              "description": "Query pubmed to relevant information from abstracts of biomedical articles. The PubMed API takes in the user query then returns the abstracts of top 5 relevant articles.",
+                              "operationId": "query-pubmed",
+                              "parameters": [
+                                  {
+                                      "name": "query",
+                                      "in": "query",
+                                      "description": "user query",
+                                      "required": true,
+                                      "schema": {
+                                          "type": "string"
+                                      }
+                                  }
+                              ],                
+                              "responses": {
+                                  "200": {
+                                      "description": "Query pubmed to relevant information from abstracts of biomedical articles.",
+                                      "content": {
+                                          "application/json": {
+                                              "schema": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                      "answer": {
+                                                          "type": "string",
+                                                          "description": "The response to user query with list of pubmed article abstracts."
+                                                      }
+                                                  }
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
       KnowledgeBases:
-          - KnowledgeBaseId: !Ref BedrockKnowledgeBase
-            Description: Literature evidence on Relationships between Molecular and Imaging Phenotypes with Prognostic Implications
+        - KnowledgeBaseId: !Ref BedrockKnowledgeBase
+          Description: Literature evidence on Relationships between Molecular and Imaging Phenotypes with Prognostic Implications
 
-
-      
-  
   AgentAliasResource:
     Type: AWS::Bedrock::AgentAlias
     Properties:
       AgentId: !GetAtt AgentResource.AgentId
       AgentAliasName: !Sub biomakers-alias
-      
 
   AgentRole:
     Type: AWS::IAM::Role
@@ -1251,10 +1229,10 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:Retrieve
-                Resource: 
+                Resource:
                   - !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}
                   - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${BedrockKnowledgeBase}
-      
+
   ########################
   ##### ActionGroup #####
   ######################
@@ -1274,13 +1252,12 @@ Resources:
       Code:
         S3Bucket: !Ref S3Bucket
         S3Key: querydatabaselambda.zip
-      
 
   AgentLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1291,7 +1268,7 @@ Resources:
       Policies:
         - PolicyName: AgentLambdaPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Sid: LambdaExecution
                 Effect: Allow
@@ -1307,12 +1284,12 @@ Resources:
                   - redshift-data:DescribeStatement
                   - redshift-data:GetStatementResult
                   - redshift-data:ListStatements
-                Resource: '*'
+                Resource: "*"
               - Sid: RedshiftCredentials
                 Effect: Allow
                 Action:
                   - redshift:GetClusterCredentials
-                Resource: 
+                Resource:
                   - !Sub arn:aws:redshift:${AWS::Region}:${AWS::AccountId}:dbuser:biomarker-redshift-cluster/admin
                   - !Sub arn:aws:redshift:${AWS::Region}:${AWS::AccountId}:dbname:biomarker-redshift-cluster/dev
               - Sid: S3Access
@@ -1320,15 +1297,14 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: 
+                Resource:
                   - !Sub arn:aws:s3:::${S3Bucket}/*
               - Sid: BedrockAccess
                 Effect: Allow
                 Action:
                   - bedrock:InvokeModel
                 Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0
-                    
-                  
+
   AgentLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1341,25 +1317,25 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
+            Action: "sts:AssumeRole"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
       Policies:
         - PolicyName: S3ObjectPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
+                Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
 
   ScientificPlotLambdaFunction:
     Type: AWS::Lambda::Function
@@ -1375,7 +1351,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET: !Ref S3Bucket
-  
+
   ScientificPlotLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1383,24 +1359,23 @@ Resources:
       FunctionName: !GetAtt ScientificPlotLambdaFunction.Arn
       Principal: bedrock.amazonaws.com
       SourceArn: !GetAtt AgentResource.AgentArn
-  
-  
+
   QueryPubMedLambdaRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
+            Action: "sts:AssumeRole"
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
 
   QueryPubMedLambdaFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: "AWS::Lambda::Function"
     DependsOn: ScientificPlotLambdaFunction
     Properties:
       FunctionName: PubMedQueryFunction
@@ -1420,24 +1395,24 @@ Resources:
       FunctionName: !GetAtt QueryPubMedLambdaFunction.Arn
       Principal: bedrock.amazonaws.com
       SourceArn: !GetAtt AgentResource.AgentArn
-  
+
   SurvivalDataProcessingLambdaRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     DependsOn: TriggerDataRetrievalLogic
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
+            Action: "sts:AssumeRole"
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
 
   SurvivalDataProcessingLambdaFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: "AWS::Lambda::Function"
     Properties:
       FunctionName: SurvivalDataProcessingFunction
       Handler: survivaldataprocessinglambda.lambda_handler
@@ -1456,7 +1431,7 @@ Resources:
       FunctionName: !GetAtt SurvivalDataProcessingLambdaFunction.Arn
       Principal: bedrock.amazonaws.com
       SourceArn: !GetAtt AgentResource.AgentArn
-  
+
   ImagingBiomarkerLambda:
     Type: AWS::Lambda::Function
     DependsOn: EnsureECRImagePushed
@@ -1465,8 +1440,8 @@ Resources:
       Handler: dummy_lambda.lambda_handler
       Role: !GetAtt ImagingLambdaExecutionRole.Arn
       Code:
-        S3Bucket: !Ref S3Bucket 
-        S3Key: Imaginglambdafunction.zip  
+        S3Bucket: !Ref S3Bucket
+        S3Key: Imaginglambdafunction.zip
       Runtime: python3.12
       Timeout: 300
       MemorySize: 256
@@ -1477,14 +1452,14 @@ Resources:
           ACCOUNTID: !Sub ${AWS::AccountId}
           S3BUCKET: !Sub s3://${S3Bucket}
       Layers:
-        - !FindInMap [RegionMap, !Ref 'AWS::Region', PandasLayer]
-  
+        - !FindInMap [RegionMap, !Ref "AWS::Region", PandasLayer]
+
   ImagingLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: ImagingBiomarkerLambdaExecutionRole
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1493,7 +1468,7 @@ Resources:
       Policies:
         - PolicyName: ImagingLambdaExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -1514,9 +1489,9 @@ Resources:
                   - states:StartExecution
                 Resource: !Ref ImagingStateMachine
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
-  
+
   ImagingLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1531,7 +1506,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1542,16 +1517,16 @@ Resources:
       Policies:
         - PolicyName: MatPlotBarChartLambdaPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:PutObject
                   - s3:GetObject
                   - s3:ListBucket
-                Resource: 
-                - !Sub 'arn:aws:s3:::${S3Bucket}'
-                - !Sub 'arn:aws:s3:::${S3Bucket}/*'
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3Bucket}"
+                  - !Sub "arn:aws:s3:::${S3Bucket}/*"
 
   MatplotlibLayer:
     Type: AWS::Lambda::LayerVersion
@@ -1564,19 +1539,18 @@ Resources:
         S3Key: lambda-layer.zip
       CompatibleRuntimes:
         - python3.11
-    
 
   MatPlotBarChartLambdaFunction:
     Type: AWS::Lambda::Function
     DependsOn: ImagingBiomarkerLambda
     Properties:
       FunctionName: MatPlotBarChartLambda
-      Handler: matplotbarchartlambda.handler  
-      Role: !GetAtt MatPlotBarChartLambdaExecutionRole.Arn  
+      Handler: matplotbarchartlambda.handler
+      Role: !GetAtt MatPlotBarChartLambdaExecutionRole.Arn
       Code:
-        S3Bucket: !Ref S3Bucket 
-        S3Key: matplotbarchartlambda.zip  
-      Runtime: python3.11  
+        S3Bucket: !Ref S3Bucket
+        S3Key: matplotbarchartlambda.zip
+      Runtime: python3.11
       Timeout: 500
       MemorySize: 128
       Layers:
@@ -1585,7 +1559,6 @@ Resources:
         Variables:
           S3_BUCKET: !Ref S3Bucket
 
-
   MatPlotBarChartLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1593,7 +1566,6 @@ Resources:
       FunctionName: !GetAtt MatPlotBarChartLambdaFunction.Arn
       Principal: bedrock.amazonaws.com
       SourceArn: !GetAtt AgentResource.AgentArn
-
 
   AgentIdSSMParameter:
     Type: AWS::SSM::Parameter
@@ -1611,7 +1583,6 @@ Resources:
       Value: !GetAtt AgentAliasResource.AgentAliasId
       Description: !Sub SSM parameter for AgentAliasId for ${EnvironmentName}
 
-
   S3BucketNameSSMParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -1620,10 +1591,9 @@ Resources:
       Value: !Ref S3Bucket
       Description: !Sub SSM parameter for S3 bucket name for ${EnvironmentName}
 
-  
   # enableCodeInterpreter:
   #   Type: Custom::enableCodeInterpreter
-  #   DependsOn: 
+  #   DependsOn:
   #     - AgentAliasResource
   #     - AgentAliasIdSSMParameter
   #   Properties:
@@ -1666,7 +1636,7 @@ Resources:
   #         def get_ssm_parameter(environment_name):
   #             ssm_client = boto3.client('ssm')
   #             parameter_name = f"/streamlitapp/{environment_name}/AGENT_ALIAS_ID"
-              
+
   #             try:
   #                 response = ssm_client.get_parameter(Name=parameter_name)
   #                 return response['Parameter']['Value']
@@ -1686,12 +1656,12 @@ Resources:
   #                 print(f"Agent status is: {agentPrep['agentStatus']} (Attempt {attempt + 1}/{MAX_ATTEMPTS})")
   #                 response = client.get_agent(agentId=agent_id)
   #                 agentStatus=response['agent']['agentStatus']
-                  
+
   #                 if agentStatus == 'PREPARED':
   #                     return True
   #                 elif agentStatus == 'FAILED':
   #                     return False
-                  
+
   #                 if attempt < MAX_ATTEMPTS - 1:
   #                     time.sleep(DELAY_SECONDS)
 
@@ -1700,7 +1670,7 @@ Resources:
   #         def handler(event, context):
   #             client = boto3.client('bedrock-agent')
   #             environment_name = os.environ['ENVIRONMENT_NAME']
-              
+
   #             try:
   #                 if event['RequestType'] in ['Create', 'Update']:
   #                     response = client.create_agent_action_group(
@@ -1711,26 +1681,26 @@ Resources:
   #                         parentActionGroupSignature='AMAZON.CodeInterpreter'
   #                     )
   #                     agent_id = os.environ['agentId']
-                      
+
   #                     if not prepare_agent(client, agent_id):
   #                         raise Exception("Agent failed to prepare or preparation timed out")
 
   #                     agentAlias = client.create_agent_alias(agentAliasName='v2', agentId=agent_id)
   #                     agent_alias_id = agentAlias['agentAlias']['agentAliasId']
-                  
+
   #                     # Create SSM parameter
   #                     create_ssm_parameter(environment_name, agent_alias_id)
-                      
+
   #                     cfnresponse.send(event, context, cfnresponse.SUCCESS, {"Message": "Action group and SSM parameter created successfully"})
   #                 elif event['RequestType'] == 'Delete':
   #                     # Retrieve the agent alias ID from SSM
   #                     agent_alias_id = get_ssm_parameter(environment_name)
-                      
+
   #                     if agent_alias_id:
   #                         # Delete the agent alias
   #                         response = client.delete_agent_alias(agentAliasId=agent_alias_id, agentId=os.environ['agentId'])
   #                         print(f"Agent alias {agent_alias_id} deleted successfully.")
-                          
+
   #                         cfnresponse.send(event, context, cfnresponse.SUCCESS, {"Message": "Agent alias and SSM parameter deleted successfully"})
   #                     else:
   #                         cfnresponse.send(event, context, cfnresponse.SUCCESS, {"Message": "No agent alias found to delete"})
@@ -1802,64 +1772,64 @@ Resources:
   #                 - ssm:PutParameter
   #               Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/streamlitapp/*
   BedrockKBExecutionRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
-      RoleName: !Sub 'AmazonBedrockExecutionRoleForKnowledgeBase_${EnvironmentName}'
+      RoleName: !Sub "AmazonBedrockExecutionRoleForKnowledgeBase_${EnvironmentName}"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: 
+              Service:
                 - bedrock.amazonaws.com
             Action: sts:AssumeRole
             Condition:
               StringEquals:
-                aws:SourceAccount: !Ref 'AWS::AccountId'
+                aws:SourceAccount: !Ref "AWS::AccountId"
               ArnLike:
-                aws:SourceArn: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
+                aws:SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*"
       Policies:
-      - PolicyName: FoundationModelPolicy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - bedrock:InvokeModel
-            Resource: 
-              - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v1'
-              - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0'
-            Sid: BedrockInvokeModelStatement
-      - PolicyName: OSSPolicy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - aoss:APIAccessAll
-            Resource: !Sub 'arn:aws:aoss:${AWS::Region}:${AWS::AccountId}:collection/${Collection}'
-            Sid: OpenSearchServerlessAPIAccessAllStatement
-      - PolicyName: S3Policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - s3:ListBucket
-            Resource: !Sub 'arn:aws:s3:::${S3Bucket}'
-            Sid: S3ListBucketStatement
-          - Effect: Allow
-            Action:
-            - s3:GetObject
-            Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
-            Sid: S3GetObjectStatement
+        - PolicyName: FoundationModelPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v1"
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
+                Sid: BedrockInvokeModelStatement
+        - PolicyName: OSSPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                Resource: !Sub "arn:aws:aoss:${AWS::Region}:${AWS::AccountId}:collection/${Collection}"
+                Sid: OpenSearchServerlessAPIAccessAllStatement
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${S3Bucket}"
+                Sid: S3ListBucketStatement
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+                Sid: S3GetObjectStatement
 
   EncryptionPolicy:
-    Type: 'AWS::OpenSearchServerless::SecurityPolicy'
+    Type: "AWS::OpenSearchServerless::SecurityPolicy"
     Properties:
-      Name: !Sub '${EnvironmentName}-encryption-policy'
+      Name: !Sub "${EnvironmentName}-encryption-policy"
       Type: encryption
-      Description: !Sub 'Encryption policy for ${AWS::StackName} collection'
+      Description: !Sub "Encryption policy for ${AWS::StackName} collection"
       Policy: !Sub |
         {
           "Rules": [
@@ -1872,11 +1842,11 @@ Resources:
         }
 
   NetworkPolicy:
-    Type: 'AWS::OpenSearchServerless::SecurityPolicy'
+    Type: "AWS::OpenSearchServerless::SecurityPolicy"
     Properties:
-      Name: !Sub '${EnvironmentName}-network-policy'
+      Name: !Sub "${EnvironmentName}-network-policy"
       Type: network
-      Description: !Sub 'Network policy for ${AWS::StackName} collection'
+      Description: !Sub "Network policy for ${AWS::StackName} collection"
       Policy: !Sub |
         [
           {
@@ -1891,12 +1861,12 @@ Resources:
         ]
 
   Collection:
-    Type: 'AWS::OpenSearchServerless::Collection'
+    Type: "AWS::OpenSearchServerless::Collection"
     Properties:
-      Name: !Sub '${EnvironmentName}-${VectorStoreName}'
+      Name: !Sub "${EnvironmentName}-${VectorStoreName}"
       Type: VECTORSEARCH
-      Description: !Sub 'Collection to hold vector for ${AWS::StackName}'
-    DependsOn: 
+      Description: !Sub "Collection to hold vector for ${AWS::StackName}"
+    DependsOn:
       - EncryptionPolicy
       - NetworkPolicy
 
@@ -1904,7 +1874,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1913,36 +1883,36 @@ Resources:
       Policies:
         - PolicyName: LambdaBasicExecution
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: 'arn:aws:logs:*:*:*'
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*"
         - PolicyName: allowAoss
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
-            - Effect: Allow
-              Action:
-              - aoss:APIAccessAll
-              - aoss:List*
-              - aoss:Get*
-              - aoss:Create*
-              - aoss:Update*
-              - aoss:Delete*
-              Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - aoss:APIAccessAll
+                  - aoss:List*
+                  - aoss:Get*
+                  - aoss:Create*
+                  - aoss:Update*
+                  - aoss:Delete*
+                Resource: "arn:aws:logs:*:*:*"
         - PolicyName: OSSLambdaRoleDefaultPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
-            - Effect: Allow
-              Action:
-              - xray:PutTelemetryRecords
-              - xray:PutTraceSegments
-              Resource: '*'
+              - Effect: Allow
+                Action:
+                  - xray:PutTelemetryRecords
+                  - xray:PutTraceSegments
+                Resource: "*"
 
   OpenSearchIndexLambda:
     Type: AWS::Lambda::Function
@@ -2055,17 +2025,17 @@ Resources:
 
       Runtime: python3.12
       Timeout: 900
-      Layers: 
-        - !FindInMap [RegionMap, !Ref 'AWS::Region', PandasLayer]
+      Layers:
+        - !FindInMap [RegionMap, !Ref "AWS::Region", PandasLayer]
 
   CreateOpenSearchIndex:
     Type: Custom::CreateOpenSearchIndex
     Properties:
       ServiceToken: !GetAtt OpenSearchIndexLambda.Arn
-      CollectionName: !Sub '${AWS::StackName}-${VectorStoreName}'
+      CollectionName: !Sub "${AWS::StackName}-${VectorStoreName}"
       IndexName: !Ref IndexName
       CollectionId: !GetAtt Collection.Id
-      Region: !Ref 'AWS::Region'
+      Region: !Ref "AWS::Region"
     DependsOn:
       - Collection
       - BedrockOSSPolicyForKB
@@ -2075,24 +2045,24 @@ Resources:
     Properties:
       ManagedPolicyName: !Sub ${AWS::StackName}-bedrock-oss-policy
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: OpenSearchServerlessAPIAccessAllStatement
             Effect: Allow
             Action:
-              - 'aoss:APIAccessAll'
+              - "aoss:APIAccessAll"
             Resource: !GetAtt Collection.Arn
       Roles:
         - !Ref BedrockKBExecutionRole
         - !Ref OpenSearchIndexLambdaRole
 
   DataAccessPolicy:
-    Type: 'AWS::OpenSearchServerless::AccessPolicy'
+    Type: "AWS::OpenSearchServerless::AccessPolicy"
     Properties:
-      Name: !Sub '${EnvironmentName}-access-policy'
-            
+      Name: !Sub "${EnvironmentName}-access-policy"
+
       Type: data
-      Description: !Sub 'Access policy for ${AWS::StackName} collection'
+      Description: !Sub "Access policy for ${AWS::StackName} collection"
       Policy: !Sub |
         [
           {
@@ -2136,23 +2106,23 @@ Resources:
   BedrockKnowledgeBase:
     Type: AWS::Bedrock::KnowledgeBase
     Properties:
-      Name: !Sub '${AWS::StackName}-ncbiKnowledgebase'
-      Description: !Sub 'A knowledge base created using CloudFormation for ${AWS::StackName}'
+      Name: !Sub "${AWS::StackName}-ncbiKnowledgebase"
+      Description: !Sub "A knowledge base created using CloudFormation for ${AWS::StackName}"
       KnowledgeBaseConfiguration:
         Type: VECTOR
         VectorKnowledgeBaseConfiguration:
-          EmbeddingModelArn: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v1'
+          EmbeddingModelArn: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v1"
       RoleArn: !GetAtt BedrockKBExecutionRole.Arn
       StorageConfiguration:
         Type: OPENSEARCH_SERVERLESS
         OpensearchServerlessConfiguration:
           CollectionArn: !GetAtt Collection.Arn
-          FieldMapping: 
-              VectorField: "bedrock-knowledge-base-default-vector"
-              TextField: "text"
-              MetadataField: "metadata"
+          FieldMapping:
+            VectorField: "bedrock-knowledge-base-default-vector"
+            TextField: "text"
+            MetadataField: "metadata"
           VectorIndexName: !Ref IndexName
-    DependsOn: 
+    DependsOn:
       - DataAccessPolicy
       - CreateOpenSearchIndex
 
@@ -2168,9 +2138,9 @@ Resources:
           BucketArn: !GetAtt S3Bucket.Arn
           InclusionPrefixes:
             - "ncbi_article.pdf"
-      Description: !Sub 'Knowledge base Data Source for ${AWS::StackName} (NCBI article)'
+      Description: !Sub "Knowledge base Data Source for ${AWS::StackName} (NCBI article)"
       KnowledgeBaseId: !Ref BedrockKnowledgeBase
-      Name: !Sub '${AWS::StackName}-ncbiKnowledgebaseds'
+      Name: !Sub "${AWS::StackName}-ncbiKnowledgebaseds"
       VectorIngestionConfiguration:
         ChunkingConfiguration:
           ChunkingStrategy: FIXED_SIZE
